@@ -1,0 +1,30 @@
+defaults:
+  - ../dp3
+
+# 覆盖基础配置，使用原始 SprayDiffusion 编码器（作为基线）
+exp_name: "dp3_spraydiffusion_ablation"
+
+policy:
+  encoder_ablation: "spraydiffusion"  # 使用原始 SprayDiffusion 编码器
+
+# 低batch size设置（适用于GPU内存不足）
+# dataloader:
+#   batch_size: 128  # 从512降到64
+#   num_workers: 4
+  
+# val_dataloader:
+#   batch_size: 128  # 从512降到64
+#   num_workers: 4
+
+# 梯度累积补偿小batch size
+# training:
+#   gradient_accumulate_every: 4  # 累积4次，等效batch_size=256
+
+logging:
+  group: ${exp_name}
+  project: maskplanner_dp3_ablation
+  tags:
+  - dp3
+  - spraydiffusion
+  - ablation
+  - baseline 

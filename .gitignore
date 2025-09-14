@@ -1,0 +1,67 @@
+# Python cache files
+*.pyc
+__pycache__/
+*/__pycache__/
+*egg-info
+
+# Run outputs and experiment data
+runs/
+debug_runs/
+predicted_programs/
+visual_results_overfit/
+*_GT_*/
+*_PRED_*/
+*.npy
+
+# Simulator outputs
+*.csv
+simulator_feedback/
+demo/
+paper_vis/
+not_works/
+# Development and environment
+local/
+wandb/
+*.sh
+todo.txt
+macro_todos.txt
+.vscode/
+
+# Paper and visualization
+PAPER_render_results.py
+PAPER_VISUAL_render_results_v2.py
+visualizations.py
+
+# Large models and data
+pretrained_models/
+models/backup_pn2/
+data/
+docs/
+/submodules/paintnet/runs
+# Misc
+concorde/
+*.out
+collect_and_save_computed_metrics.py
+demo/
+demo_1/
+demo_outcome1/
+visual_results/
+paper_vis/
+paper_vis/
+demo/
+demo_detailed_output/
+*.tar.gz
+demo_mitsuba_output/
+demo_render/
+enhanced_visualizations/
+pointflow_visualizations/
+public_checkpoints/
+mitsuba_scenes/
+outputs/
+test_results/
+outputs/
+data_objects/
+results/
+pretrained_models.tar.gz/
+*.tar.gz
+pretrained_models.tar.gz

@@ -1,0 +1,51 @@
+---
+# SprayDiffusion Configuration
+
+# Basic Dataset Configuration
+dataset: windows-v2
+traj_points: 675
+max_n_strokes: 22
+batch_size: 128
+
+# SprayDiffusion Specific Parameters
+io_type: 'SprayDiffusion'  # Specify the use of SprayDiffusion
+action_dim: 24  # Action space dimension
+horizon: 16    # Time steps
+n_action_steps: 100  # Number of predicted actions
+n_obs_steps: 1       # Number of observation steps
+encoder_output_dim: 256  # Encoder output dimension
+
+# Diffusion Model Parameters
+diffusion:
+  model_type: 'dp3'
+  diffusion_step_embed_dim: 128
+  down_dims: [512, 1024, 2048]
+  kernel_size: 5
+  n_groups: 8
+  condition_type: "film"
+  use_down_condition: true
+  use_mid_condition: true
+  use_up_condition: true
+  num_inference_steps: 10
+  obs_as_global_cond: true
+
+# Training Parameters
+epochs: 4800
+lr: 1e-4
+eval_freq: 200
+
+# Model Definition
+model:
+  backbone: 'dp3'
+  
+# Scheduler Configuration
+noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddim.DDIMScheduler
+    num_train_timesteps: 100
+    beta_start: 0.0001
+    beta_end: 0.02
+    beta_schedule: squaredcos_cap_v2
+    clip_sample: True
+    set_alpha_to_one: True
+    steps_offset: 0
+    prediction_type: sample

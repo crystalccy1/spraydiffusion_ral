@@ -1,0 +1,88 @@
+# SprayDiffusion Partial Observation Configuration
+
+# Basic Dataset Configuration
+dataset: windows-v2
+traj_points: 675
+max_n_strokes: 22
+batch_size: 8
+
+# SprayDiffusion Specific Parameters
+io_type: 'SprayDiffusion'
+action_dim: 24
+horizon: 16
+n_action_steps: 100
+n_obs_steps: 1
+encoder_output_dim: 256
+
+# Partial Observation Configuration
+partial_observation:
+  enabled: true
+  face_selection_method: 'x_plane'  # 'random', 'fixed', 'camera_view', 'x_plane'
+  face_ratio: 0.3  # 保留30%的点云（大约一个面）
+  fixed_face_direction: [0, 0, 1]  # 固定面的法向量方向（如果使用fixed方法）
+  camera_position: [1, 1, 1]  # 相机位置（如果使用camera_view方法）
+  noise_level: 0.02  # 添加少量噪声以增强鲁棒性
+  augment_rotation: true  # 是否对部分点云进行旋转增强
+
+# Diffusion Model Parameters
+diffusion:
+  model_type: 'dp3'
+  diffusion_step_embed_dim: 128
+  down_dims: [512, 1024, 2048]
+  kernel_size: 5
+  n_groups: 8
+  condition_type: "film"
+  use_down_condition: true
+  use_mid_condition: true
+  use_up_condition: true
+  num_inference_steps: 10
+  obs_as_global_cond: true
+
+# Training Parameters
+epochs: 100
+lr: 1e-4
+eval_freq: 5
+seed: 42
+
+# Model Definition
+model:
+  backbone: 'dp3'
+
+# Training Configuration
+training:
+  use_ema: true
+  ema_decay: 0.995
+  gradient_accumulate_every: 1
+  lr_scheduler: 'constant'
+  lr_warmup_steps: 0
+  max_train_steps: null
+  sample_every: 10
+  wandb_sample_vis_log_ratio: 100
+
+# Checkpoint Configuration
+checkpoint:
+  save_ckpt: true
+  checkpoint_every: 5
+  save_last_ckpt: true
+  save_last_snapshot: false
+  topk:
+    k: 1
+    monitor_key: 'pred_cond_Pred_Cond_mean_point-wise_chamfer_distance'
+    mode: 'min'
+
+# Scheduler Configuration
+noise_scheduler:
+  _target_: diffusers.schedulers.scheduling_ddim.DDIMScheduler
+  num_train_timesteps: 100
+  beta_start: 0.0001
+  beta_end: 0.02
+  beta_schedule: squaredcos_cap_v2
+  clip_sample: true
+  set_alpha_to_one: true
+  steps_offset: 0
+  prediction_type: sample
+
+# Logging Configuration
+wandb: online
+debug: false
+notes: "SprayDiffusion with Partial Observation" 

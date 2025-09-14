@@ -1,0 +1,3 @@
+[submodule "paintnet"]
+	path = paintnet
+	url = git@github.com:gabrieletiboni/paintnet.git

@@ -1,0 +1,8 @@
+---
+# 自定义参数配置，覆盖默认参数
+
+# 将extra_data设置为空列表
+extra_data: ['orientnorm']
+
+# 将data_scale_factor设置为1
+data_scale_factor: null

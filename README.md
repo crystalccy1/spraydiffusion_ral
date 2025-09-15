@@ -164,7 +164,7 @@ python train.py --config [config_name] --seed 42
 
 ### Testing Commands
 
-```bash
+g```bash
 # SprayDiffusion testing
 python test_spraydiffusion.py \
     --checkpoint_path [checkpoint_path] \
@@ -525,9 +525,6 @@ spraydiffusion_ccy/
         └── torch-nndistance/
 ```
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 

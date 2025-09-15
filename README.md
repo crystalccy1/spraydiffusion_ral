@@ -164,7 +164,7 @@ python train.py --config [config_name] --seed 42
 
 ### Testing Commands
 
-    ```bash
+```bash
 # SprayDiffusion testing
 python test_spraydiffusion.py \
     --checkpoint_path [checkpoint_path] \
@@ -185,8 +185,11 @@ python test_spraydiffusion_with_paintnet.py \
     --run_name [run_name] \
     --seed 42 \
     --workers 4
+```
 
-# Comparison testing (both methods)
+## Comparison Testing (Both Methods)
+
+```bash
 python test_spraydiffusion_with_paintnet.py \
     --spraydiffusion_checkpoint [checkpoint_path] \
     --paintnet_model [model_path] \

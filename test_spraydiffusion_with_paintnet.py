@@ -333,7 +333,7 @@ def main():
     
     # Test SprayDiffusion if checkpoint provided
     if args.spraydiffusion_checkpoint and not args.paintnet_only:
-        cprint("\n🚀 Testing SprayDiffusion", "cyan")
+        cprint("\nTesting SprayDiffusion", "cyan")
         cprint("-" * 30, "cyan")
         
         # Load SprayDiffusion model
@@ -386,14 +386,14 @@ def main():
                 )
                 
                 results['spraydiffusion'] = spraydiffusion_results
-                cprint("✅ SprayDiffusion evaluation completed", "green")
+                cprint("SprayDiffusion evaluation completed", "green")
                 
             except Exception as e:
                 cprint(f"Error running SprayDiffusion: {e}", "red")
     
     # Test PaintNet if model provided
     if args.paintnet_model and not (args.spraydiffusion_checkpoint and not args.comparison_mode):
-        cprint("\n🏁 Testing PaintNet", "cyan")
+        cprint("\nTesting PaintNet", "cyan")
         cprint("-" * 30, "cyan")
         
         # Load PaintNet model
@@ -424,12 +424,12 @@ def main():
             )
             
             results['paintnet'] = paintnet_results
-            cprint("✅ PaintNet evaluation completed", "green")
+            cprint("PaintNet evaluation completed", "green")
         else:
-            cprint("❌ Failed to load PaintNet model", "red")
+            cprint("Failed to load PaintNet model", "red")
     
     # Print results summary
-    cprint("\n📊 Evaluation Results Summary:", "blue")
+    cprint("\nEvaluation Results Summary:", "blue")
     for method, result in results.items():
         cprint(f"\n--- {method.upper()} ---", "yellow")
         if 'pred_cond' in result:
@@ -439,7 +439,7 @@ def main():
                 elif isinstance(value, np.ndarray) and value.size == 1:
                     cprint(f"  {key}: {value.item():.4f}", "yellow")
     
-    cprint(f"\n📁 Output saved to: {args.output_dir_base}/demo/{args.run_name}/", "cyan")
+    cprint(f"\nOutput saved to: {args.output_dir_base}/demo/{args.run_name}/", "cyan")
 
 if __name__ == '__main__':
     main()

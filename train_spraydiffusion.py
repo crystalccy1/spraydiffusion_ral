@@ -130,24 +130,24 @@ config.random_traj_seed = cli_args.random_traj_seed
 # Check if partial observation parameters exist in config file first, otherwise use CLI args
 if hasattr(config, 'partial_observation_enabled'):
     # Use config file values if they exist
-    print("📋 Using partial observation settings from config file")
+    print("Using partial observation settings from config file")
 else:
     # Use CLI arguments if not in config file
     config.partial_observation_enabled = cli_args.partial_observation
     config.partial_observation_method = cli_args.partial_observation_method
     config.partial_observation_ratio = cli_args.partial_observation_ratio
-    print("📋 Using partial observation settings from CLI arguments")
+    print("Using partial observation settings from CLI arguments")
 
 # Override CLI args if provided (CLI args take precedence)
 if cli_args.partial_observation:
     config.partial_observation_enabled = True
     config.partial_observation_method = cli_args.partial_observation_method
     config.partial_observation_ratio = cli_args.partial_observation_ratio
-    print("📋 CLI partial observation arguments override config file settings")
+    print("CLI partial observation arguments override config file settings")
 
 if config.partial_observation_enabled:
-    print(f"🎯 Partial observation enabled with method: {config.partial_observation_method}")
-    print(f"📊 Point cloud retention ratio: {config.partial_observation_ratio}")
+    print(f"Partial observation enabled with method: {config.partial_observation_method}")
+    print(f"Point cloud retention ratio: {config.partial_observation_ratio}")
 
 # Override model backbone for SprayDiffusion - ensure we use dp3 instead of pointnet2
 if not hasattr(config, 'model'):
@@ -655,17 +655,17 @@ class SprayDiffusionTrainingWorkspace:
                                     pc_mean = point_cloud_np.mean(axis=0)
                                     pc_std = point_cloud_np.std(axis=0)
                                     
-                                    cprint(f"📊 Point Cloud Stats (Epoch {self.epoch}):", "cyan")
+                                    cprint(f"Point Cloud Stats (Epoch {self.epoch}):", "cyan")
                                     cprint(f"  Shape: {point_cloud_np.shape} (from original {original_shape})", "cyan")
                                     cprint(f"  Range: X[{pc_min[0]:.3f}, {pc_max[0]:.3f}] Y[{pc_min[1]:.3f}, {pc_max[1]:.3f}] Z[{pc_min[2]:.3f}, {pc_max[2]:.3f}]", "cyan")
                                     cprint(f"  Mean: [{pc_mean[0]:.3f}, {pc_mean[1]:.3f}, {pc_mean[2]:.3f}]", "cyan")
                                     cprint(f"  Std:  [{pc_std[0]:.3f}, {pc_std[1]:.3f}, {pc_std[2]:.3f}]", "cyan")
-                                    cprint(f"  💾 Saved: {os.path.basename(npy_path)} & {os.path.basename(ply_path)}", "green")
+                                    cprint(f"  Saved: {os.path.basename(npy_path)} & {os.path.basename(ply_path)}", "green")
                                 elif self.epoch % 50 == 0:
-                                    cprint(f"💾 Saved point cloud epoch {self.epoch}: {point_cloud_np.shape[0]} points", "green")
+                                    cprint(f"Saved point cloud epoch {self.epoch}: {point_cloud_np.shape[0]} points", "green")
                                     
                             except Exception as e:
-                                cprint(f"❌ Error saving point cloud for epoch {self.epoch}: {e}", "red")
+                                cprint(f"Error saving point cloud for epoch {self.epoch}: {e}", "red")
                                 if self.verbose:
                                     import traceback
                                     traceback.print_exc()

@@ -4,7 +4,7 @@ This repository contains the implementation of SprayDiffusion, a diffusion-based
 
 ## Abstract
 
-SprayDiffusion is a novel diffusion-based method for generating robotic spray painting trajectories from 3D point clouds. The approach leverages diffusion models to learn complex trajectory patterns and generate high-quality spray painting paths that achieve excellent coverage and smoothness across various object geometries.
+Deep generative models—especially diffusion models—have recently shown strong promise for long-horizon robot skills, due to their ability to capture highly multi-modal trajectory distributions. However, in industrial spray painting, methods such as current method predict local segments and heuristically stitch them, causing local inflexibility and typically requiring category-specific training. We propose SprayDiffusion, an end-to-end diffusion approach that generates smooth, temporally coherent, long-horizon 6-DoF trajectories conditioned on object point clouds and task constraints. The iterative denoising process enforces temporal coherence and captures the multimodal distribution of expert behaviors, enabling a unified policy to generalize across diverse object categories. In experiments, our method improves trajectory continuity, maintains high coverage, and generalizes to unseen shapes. Ablation studies quantify the gains from conditional guidance. These results indicate that diffusion policies offer a scalable, robust route to learning executable spray-painting programs directly from demonstrations, paving the way for unified end-to-end trajectory learning across industrial surface-processing tasks without category-specific models.
 
 ## Table of Contents
 
@@ -27,12 +27,12 @@ SprayDiffusion is a novel diffusion-based method for generating robotic spray pa
 - Linux system (tested on Ubuntu)
 - CUDA 11.7+ compatible GPU
 - Conda package manager
-
+    
 ### Environment Setup
 
 1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
+    ```bash
+   git clone git@github.com:crystalccy1/spraydiffusion_ral.git
    cd spraydiffusion_ccy
    ```
 
@@ -42,7 +42,7 @@ SprayDiffusion is a novel diffusion-based method for generating robotic spray pa
    conda env create -f environment.yaml
    
    # Activate the environment
-   conda activate maskplanner
+   conda activate spraydiffusion
    ```
 
 3. **Verify installation:**
@@ -161,7 +161,7 @@ python train.py --config [config_name] --seed 42
 
 ### Testing Commands
 
-```bash
+    ```bash
 # SprayDiffusion testing
 python test_spraydiffusion.py \
     --checkpoint_path [checkpoint_path] \
@@ -324,7 +324,7 @@ outputs/
 ### Common Issues
 
 1. **CUDA Version Mismatch**
-   ```bash
+    ```bash
    # Check CUDA version
    nvidia-smi
    
@@ -340,7 +340,7 @@ outputs/
    ```
 
 3. **Open3D Import Errors**
-   ```bash
+    ```bash
    # Reinstall Open3D
    pip uninstall open3d
    pip install open3d==0.19.0
@@ -392,16 +392,16 @@ def check_imports():
     for package in packages:
         try:
             __import__(package)
-            print(f"✅ {package}")
+            print(f"SUCCESS: {package}")
         except ImportError as e:
-            print(f"❌ {package}: {e}")
+            print(f"FAILED: {package}: {e}")
             failed_imports.append(package)
     
     if failed_imports:
         print(f"\nFailed imports: {failed_imports}")
         return False
     else:
-        print("\n🎉 All packages imported successfully!")
+        print("\nAll packages imported successfully!")
         return True
 
 def check_cuda():

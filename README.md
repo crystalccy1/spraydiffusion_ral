@@ -6,6 +6,9 @@ This repository contains the implementation of SprayDiffusion, a diffusion-based
 
 Deep generative models—especially diffusion models—have recently shown strong promise for long-horizon robot skills, due to their ability to capture highly multi-modal trajectory distributions. However, in industrial spray painting, methods such as current method predict local segments and heuristically stitch them, causing local inflexibility and typically requiring category-specific training. We propose SprayDiffusion, an end-to-end diffusion approach that generates smooth, temporally coherent, long-horizon 6-DoF trajectories conditioned on object point clouds and task constraints. The iterative denoising process enforces temporal coherence and captures the multimodal distribution of expert behaviors, enabling a unified policy to generalize across diverse object categories. In experiments, our method improves trajectory continuity, maintains high coverage, and generalizes to unseen shapes. Ablation studies quantify the gains from conditional guidance. These results indicate that diffusion policies offer a scalable, robust route to learning executable spray-painting programs directly from demonstrations, paving the way for unified end-to-end trajectory learning across industrial surface-processing tasks without category-specific models.
 
+![SprayDiffusion Overview](first%20figure_final.png)
+
+
 ## Table of Contents
 
 - [Installation](#installation)

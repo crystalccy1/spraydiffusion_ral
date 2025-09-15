@@ -1,6 +1,6 @@
 # SprayDiffusion: Diffusion-based Robotic Spray Painting Trajectory Generation
 
-This repository contains the implementation of SprayDiffusion, a diffusion-based approach for robotic spray painting trajectory generation, submitted to IEEE Robotics and Automation Letters (RA-L).
+This repository contains the implementation of SprayDiffusion, a diffusion-based approach for robotic spray painting trajectory generation.
 
 ## Abstract
 

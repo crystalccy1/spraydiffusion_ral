@@ -164,7 +164,7 @@ python train.py --config [config_name] --seed 42
 
 ### Testing Commands
 
-g```bash
+```bash
 # SprayDiffusion testing
 python test_spraydiffusion.py \
     --checkpoint_path [checkpoint_path] \

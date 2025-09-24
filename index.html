@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-Driven Gesture Generation via Conditional Flow Matching with Masked Training and Constrained Sampling</title>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh;
+            background: #f8f8f8;
+            border-right: 1px solid #e0e0e0;
+            padding-top: 40px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .sidebar nav {
+            width: 100%;
+        }
+        .sidebar a {
+            display: block;
+            padding: 14px 30px 14px 40px;
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 500;
+            border-radius: 0 20px 20px 0;
+            margin-bottom: 8px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #e0e0e0;
+            color: #1976d2;
+        }
+        .sidebar a.subsection-link {
+            font-size: 15px;
+            font-weight: 400;
+            padding-left: 60px;
+            margin-bottom: 4px;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            margin-left: 240px; /* space for sidebar */
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: left;
+            padding-left: 20px;
+        }
+        .section-description {
+            font-size: 16px;
+            color: #666;
+            margin: -15px 0 20px 20px;
+            font-style: italic;
+        }
+        .subsection-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #444;
+            margin: 30px 0 20px 0;
+            padding-left: 20px;
+        }
+        .subsubsection-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            margin: 25px 0 15px 0;
+            padding-left: 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .table-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-left: 0;
+        }
+        .header-row {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            justify-content: flex-start;
+            align-items: center;
+            margin-left: 0;
+        }
+        .row {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            justify-content: flex-start;
+            margin-left: 0;
+        }
+        .cell {
+            width: 280px;
+            height: 157.5px; /* 16:9 aspect ratio */
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+        .header-cell {
+            width: 220px;
+            height: 40px;
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .header-cell:first-child {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            background: transparent;
+            box-shadow: none;
+            pointer-events: none;
+            cursor: default;
+        }
+        .row-label {
+            min-width: 120px;
+            height: 157.5px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+            padding: 0;
+            margin: 0;
+            padding-right: 10px;
+            text-align: left;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+        }
+        .cell-square {
+            width: 220px;
+            height: 220px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+        .video-square {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+        }
+        .scroll-container {
+            overflow-x: auto;
+            padding: 20px 0 20px 20px;
+            width: calc(4 * (220px + 15px) - 15px); /* 4 videos + gaps */
+            margin: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+        .cell-square-large {
+            width: 340px;
+            height: 255px; /* 4:3 aspect ratio */
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+        .video-square-large {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+        }
+        .cell-robot-16x9 {
+            width: 391px;
+            height: 220px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+        .video-robot-16x9 {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+        }
+        .robot-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+            padding-left: 20px;
+        }
+        .robot-grid-row {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            justify-content: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <nav>
+            <a href="#introduction">Introduction</a>
+            <a href="#generation-result">Generation Result</a>
+            <a href="#partial-gesture">Partial Gesture Completion</a>
+            <a class="subsection-link" href="#future-frames">Future frames</a>
+            <a class="subsection-link" href="#past-frames">Past frames</a>
+            <a class="subsection-link" href="#middle-frames">Middle frames</a>
+            <a class="subsection-link" href="#side-frames">Side frames</a>
+            <a class="subsection-link" href="#key-frame">Key frame</a>
+            <a class="subsection-link" href="#upper-body">Body part</a>
+            <a href="#robot-retargeting">Retargetted Robot Movement</a>
+        </nav>
+    </div>
+    <div class="wrapper">
+        <!-- Introduction Section -->
+        <div class="intro-section" id="introduction" style="max-width: 800px; margin: 0 0 20px 20px; padding: 20px 0 0 0;">
+            <h1 class="intro-title" style="font-size: 2.5rem; font-weight: bold; text-align: justify; margin-bottom: 10px;">Speech-Driven Gesture Generation via Conditional Flow Matching with Masked Training and Constrained Sampling</h1>
+            <div style="margin-top: 16px; text-align: left;">
+                <a href="https://anonymous.4open.science/r/Speech-Driven-Gesture-Generation-via-CFM-with-Masked-Training-and-Constrained-Sampling-B2F6/README.md" 
+                   target="_blank" 
+                   style="display: inline-block; background: #24292f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 1rem;">
+                    <svg style="vertical-align: middle; margin-right: 8px;" height="20" viewBox="0 0 16 16" width="20" aria-hidden="true">
+                        <path fill="white" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    Demo on Github
+                </a>
+            </div>
+            <div class="intro-abstract-image" style="display: flex; flex-direction: column; padding-bottom: 10px;">
+                <div class="intro-abstract" style="width: 100%; max-width: 800px;">
+                    <h2 style="font-size: 1.3rem; font-weight: bold; text-align: justify;">Abstract</h2>
+                    <p style="font-size: 1.1rem; color: #555; text-align: justify;">The ability to perform co‐speech gestures is essential for robots with human‐like appearances. In this paper, we present a novel conditional flow matching-based generative model to generate co‐speech gestures from speech input. Moreover, we propose a masked training strategy and the corresponding masked generation algorithm to ensure smooth transitions in sequential gesture movements when processing segmented, long speech inputs. Furthermore, masked generation inherently supports general purpose partial gesture completion. To enable direct deployment on humanoid robots, we introduce constrained sampling algorithm which enforces physical limits during generation, thereby avoiding hard post‐processing (e.g., clamping) that may distort intended gestures. User study shows that our model outperforms existing baselines in gesture naturalness and is competitive in speech appropriateness. Our experiments confirm the efficacy of masked generation and constrained sampling. </p>
+                </div>
+                <p style="font-size: 16px; color: #666; font-style: italic; text-align: justify;">Overview of the proposed method</p>
+                <div class="intro-image" style="width: 100%; max-width: 800px;">
+                    <img src="assets/imgs/overview.png" alt="Overview of the proposed method" style="width: 100%; border-radius: 12px;">
+                </div>
+            </div>
+        </div>
+        <div class="section" id="generation-result">
+            <h2 class="section-title">Generation Result (10-seconds segment)</h2>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Ground truth</div>
+                    <div class="header-cell">CFM (ours)</div>
+                    <div class="header-cell">CFM (inpainting)</div>
+                    <div class="header-cell">EMAGE</div>
+                    <div class="header-cell">MambaTalk</div>
+                    <div class="header-cell">GestureLSM</div>
+                </div>
+                <!-- First row with videos -->
+                <div class="row">
+                    <div class="row-label">Speech 1</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/gt.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/cfm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/cfm_inpainting.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/emage.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/mamba.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_14/lsm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Placeholder rows -->
+                <div class="row">
+                    <div class="row-label">Speech 2</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/gt.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/cfm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/cfm_inpainting.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/emage.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/mamba.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_5/lsm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Speech 3</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/gt.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/cfm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/cfm_inpainting.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/emage.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/mamba.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_25/lsm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Speech 4</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/gt.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/cfm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/cfm_inpainting.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/emage.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/mamba.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_30/lsm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Speech 5</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/gt.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/cfm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/cfm_inpainting.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/emage.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/mamba.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/groups/group_35/lsm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="partial-gesture">
+            <h2 class="section-title">Partial Gesture Completion (4-seconds segment)</h2>
+            <p class="section-description">Green indicates the observed partial gestures, while white indicates the generated gestures. See our paper for details.</p>
+            
+            <h3 class="subsection-title" id="future-frames">Future frames</h3>
+            <h4 class="subsubsection-title">Case 1</h4>
+            <p class="section-description">Observed: first 32 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/begin_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <p class="section-description">Observed: first 64 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/begin_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <p class="section-description">Observed: first 96 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/begin_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="subsection-title" id="past-frames">Past frames</h3>
+            
+            <h4 class="subsubsection-title">Case 1</h4>
+            <p class="section-description">Observed: last 32 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/end_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <p class="section-description">Observed: last 64 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/end_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <p class="section-description">Observed: last 96 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/end_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="subsection-title" id="middle-frames">Middle frames</h3>
+            <p class="section-description">Observed: 0~32 & 64~ frames</p>
+            <h4 class="subsubsection-title">Case 1</h4>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/in_between_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <p class="section-description">Observed: 0~64 & 96~ frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/in_between_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <p class="section-description">Observed: 0~32 & 96~ frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/in_between_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="subsection-title" id="side-frames">Side frames</h3>
+            <p class="section-description">Observed: 32~64 frames</p>
+            <h4 class="subsubsection-title">Case 1</h4>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/middle_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <p class="section-description">Observed: 64~96 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/middle_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <p class="section-description">Observed: 32~96 frames</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/middle_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="subsection-title" id="key-frame">Key frame</h3>
+            <p class="section-description">The key frame disappears very fast because only one frame is colored.</p>
+            
+            <h4 class="subsubsection-title">Case 1</h4>
+            <p class="section-description">Observed: frame 30</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/keyframe_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <p class="section-description">Observed: frame 30, 60</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/keyframe_vis_1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <p class="section-description">Observed: frame 30, 60, 90</p>
+            <div class="table-container">
+                <!-- Column Headers -->
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <!-- First row -->
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <!-- Second row -->
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/keyframe_vis_2.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="subsection-title" id="upper-body">Body part</h3>
+            <h4 class="subsubsection-title">Case 1</h4>
+            <div class="table-container">
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/lower_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 2</h4>
+            <div class="table-container">
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/upper_body_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 3</h4>
+            <div class="table-container">
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/left_arm_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="subsubsection-title">Case 4</h4>
+            <div class="table-container">
+                <div class="header-row">
+                    <div class="header-cell"></div>
+                    <div class="header-cell">Speech 1</div>
+                    <div class="header-cell">Speech 2</div>
+                    <div class="header-cell">Speech 3</div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Ours</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_0/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_1/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate/steps_20_seed_2/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row-label">Inpainting</div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_0/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_1/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-square">
+                        <video class="video-square" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/vis_test_annotate_inpainting/steps_20_seed_2/both_arms_vis_0.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+        <div class="section" id="robot-retargeting">
+            <h2 class="section-title">Retargetted Robot Movement (1 minute videos)</h2>
+            <p class="section-description">Using constrained sampling</p>
+            <div class="robot-grid-container">
+                <div class="robot-grid-row">
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_1_1_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_2_2_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="robot-grid-row">
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_3_3_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_4_4_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="robot-grid-row">
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_7_7_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_8_8_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+                <div class="robot-grid-row">
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_95_95_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="cell-robot-16x9">
+                        <video class="video-robot-16x9" controls>
+                            <source src="https://wu-cloud-bucket.s3.ap-northeast-3.amazonaws.com/2025_ral_exp/tk_videos/2_scott_0_103_103_tk.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

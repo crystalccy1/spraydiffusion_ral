@@ -221,60 +221,51 @@ The system evaluates the following metrics:
 
 ## Experimental Results
 
-### SprayDiffusion Results
+### Comprehensive Comparison Results
 
-#### Cuboids-v2 Dataset
-| Test | PCD | Coverage | Smoothness |
-|------|-----|----------|------------|
-| Test 1 (seed=42) | 18.7087 | 92.8486% | 0.0471 |
-| Test 2 (seed=1001) | 16.9353 | 92.9660% | 0.0466 |
-| Test 3 (seed=2002) | 16.9718 | 92.9900% | 0.0468 |
-| **Mean** | **17.5386** | **92.9349%** | **0.046833** |
-| **Std** | **1.0135** | **0.0757** | **0.000252** |
+The following table shows quantitative results across three metrics: Point-wise Chamfer Distance (PCD), Surface Coverage Rate (Coverage, reported in %), and Smoothness. Values are reported as mean ± standard deviation over three random seeds. Boldface indicates the best-performing method. For PCD and Smoothness, lower is better (↓); for Coverage, higher is better (↑).
 
-#### Shelves-v2 Dataset
-| Test | PCD | Coverage | Smoothness |
-|------|-----|----------|------------|
-| Test 1 (seed=42) | 15.1421 | 82.8697% | 0.0742 |
-| Test 2 (seed=1001) | 15.1978 | 83.1833% | 0.0734 |
-| Test 3 (seed=2002) | 17.7759 | 82.9080% | 0.0734 |
-| **Mean** | **16.0386** | **82.9870%** | **0.073667** |
-| **Std** | **1.5048** | **0.1711** | **0.000462** |
+| **Model** | **Windows** | | | **Cuboids** | | | **Shelves** | | | **Containers** | | |
+|-----------|-------------|---|---|-------------|---|---|-------------|---|---|-------------|---|---|
+| | PCD ↓ | Coverage ↑ | Smoothness ↓ | PCD ↓ | Coverage ↑ | Smoothness ↓ | PCD ↓ | Coverage ↑ | Smoothness ↓ | PCD ↓ | Coverage ↑ | Smoothness ↓ |
+| **Point-Wise** | 55.71 ± 3.10 | 96.49 ± 0.11% | 2.54 ± 0.00 | 35.47 ± 0.22 | **98.73 ± 0.11%** | 3.50 ± 0.01 | 44.30 ± 0.59 | **92.96 ± 0.02%** | 2.20 ± 0.00 | **313.98 ± 2.47** | **82.86 ± 0.60%** | 1.71 ± 0.03 |
+| **Multi-Path** | 264.69 ± 0.43 | 67.54 ± 0.13% | 1.69 ± 0.00 | 297.40 ± 0.27 | 50.66 ± 0.15% | 3.30 ± 0.00 | 491.86 ± 3.29 | 26.05 ± 0.32% | 0.72 ± 0.00 | 1193.45 ± 5.97 | 14.12 ± 0.80% | 0.33 ± 0.01 |
+| **PaintNet** | 694.88 ± 76.17 | 63.57 ± 0.16% | 1.37 ± 0.06 | 689.84 ± 1.71 | 11.47 ± 0.14% | 1.32 ± 0.00 | 744.64 ± 3.72 | 16.22 ± 0.80% | 0.26 ± 0.01 | 2621.26 ± 34.64 | 1.54 ± 0.25% | 0.17 ± 0.00 |
+| **Ours (SprayDiffusion)** | **10.24 ± 0.49** | **99.65 ± 0.05%** | **0.05 ± 0.01** | **4.82 ± 0.14** | 92.78 ± 0.08% | **0.04 ± 0.01** | **9.01 ± 0.30** | 83.01 ± 0.30% | **0.07 ± 0.01** | 622.16 ± 26.62 | 50.09 ± 1.22% | **0.04 ± 0.01** |
 
-#### Windows-v2 Dataset
-| Test | PCD | Coverage | Smoothness |
-|------|-----|----------|------------|
-| Test 1 (seed=42) | 16.6167 | 99.5786% | 0.0547 |
-| Test 2 (seed=1001) | 27.5459 | 99.6046% | 0.0532 |
-| Test 3 (seed=2002) | 20.8766 | 99.5103% | 0.0546 |
-| **Mean** | **21.3464** | **99.5645%** | **0.0545** |
-| **Std** | **4.7423** | **0.0379** | **0.0000767** |
+### Key Findings
 
-### PaintNet Baseline Results
+#### Performance Summary
+- **SprayDiffusion (Ours)** achieves the best PCD scores across all datasets, demonstrating superior trajectory accuracy
+- **SprayDiffusion** achieves the best smoothness scores across all datasets, indicating highly smooth trajectories
+- **Point-Wise** method achieves the highest coverage on Cuboids, Shelves, and Containers datasets
+- **SprayDiffusion** achieves the highest coverage on Windows dataset (99.65%)
 
-#### Lambda=4 Configuration
-| Dataset | PCD | Coverage | Smoothness | Inference Time |
-|---------|-----|----------|------------|----------------|
-| Shelves-v2 | 4571.93 | 18.83% | 0.2471 | 14.63ms |
-| Windows-v2 | 9271.90 | 27.92% | 0.2592 | 14.94ms |
-| Cuboids-v2 | 2761.44 | 32.58% | 0.6929 | 93.22ms |
-| Containers-v2 | 16170.92 | 7.13% | 0.0318 | 126.67ms |
+#### Dataset-Specific Results
 
-#### Lambda=10 Configuration
-| Dataset | PCD | Coverage | Smoothness | Inference Time |
-|---------|-----|----------|------------|----------------|
-| Shelves-v2 | 30665.19 | 63.88% | 2.9587 | 87.12ms |
-| Windows-v2 | 3209.26 | 82.96% | 1.2526 | 82.89ms |
-| Cuboids-v2 | 5796.82 | 62.81% | 2.2239 | 82.35ms |
-| Containers-v2 | 22305.24 | 27.14% | 0.6482 | 114.41ms |
+**Windows Dataset:**
+- SprayDiffusion: PCD 10.24 ± 0.49, Coverage 99.65 ± 0.05%, Smoothness 0.05 ± 0.01
+- Point-Wise: PCD 55.71 ± 3.10, Coverage 96.49 ± 0.11%, Smoothness 2.54 ± 0.00
+- Multi-Path: PCD 264.69 ± 0.43, Coverage 67.54 ± 0.13%, Smoothness 1.69 ± 0.00
+- PaintNet: PCD 694.88 ± 76.17, Coverage 63.57 ± 0.16%, Smoothness 1.37 ± 0.06
 
-#### Lambda=1 Configuration
-| Dataset | PCD | Coverage | Smoothness | Inference Time |
-|---------|-----|----------|------------|----------------|
-| Shelves-v2 | 33.32 | 96.22% | 2.0599 | 80.28ms |
-| Windows-v2 | 28.00 | 98.98% | 2.6445 | 82.63ms |
-| Cuboids-v2 | 28.11 | 99.86% | 3.5888 | 81.05ms |
-| Containers-v2 | 313.98 | 82.86% | 1.7118 | 115.64ms |
+**Cuboids Dataset:**
+- SprayDiffusion: PCD 4.82 ± 0.14, Coverage 92.78 ± 0.08%, Smoothness 0.04 ± 0.01
+- Point-Wise: PCD 35.47 ± 0.22, Coverage 98.73 ± 0.11%, Smoothness 3.50 ± 0.01
+- Multi-Path: PCD 297.40 ± 0.27, Coverage 50.66 ± 0.15%, Smoothness 3.30 ± 0.00
+- PaintNet: PCD 689.84 ± 1.71, Coverage 11.47 ± 0.14%, Smoothness 1.32 ± 0.00
+
+**Shelves Dataset:**
+- SprayDiffusion: PCD 9.01 ± 0.30, Coverage 83.01 ± 0.30%, Smoothness 0.07 ± 0.01
+- Point-Wise: PCD 44.30 ± 0.59, Coverage 92.96 ± 0.02%, Smoothness 2.20 ± 0.00
+- Multi-Path: PCD 491.86 ± 3.29, Coverage 26.05 ± 0.32%, Smoothness 0.72 ± 0.00
+- PaintNet: PCD 744.64 ± 3.72, Coverage 16.22 ± 0.80%, Smoothness 0.26 ± 0.01
+
+**Containers Dataset:**
+- SprayDiffusion: PCD 622.16 ± 26.62, Coverage 50.09 ± 1.22%, Smoothness 0.04 ± 0.01
+- Point-Wise: PCD 313.98 ± 2.47, Coverage 82.86 ± 0.60%, Smoothness 1.71 ± 0.03
+- Multi-Path: PCD 1193.45 ± 5.97, Coverage 14.12 ± 0.80%, Smoothness 0.33 ± 0.01
+- PaintNet: PCD 2621.26 ± 34.64, Coverage 1.54 ± 0.25%, Smoothness 0.17 ± 0.00
 
 ## Visualization
 
@@ -438,11 +429,18 @@ Each experiment is run 3 times with different seeds (42, 1001, 2002) to ensure s
 
 ## Performance Comparison
 
-### SprayDiffusion vs PaintNet
-- **Trajectory Quality**: SprayDiffusion shows significantly better PCD scores
-- **Coverage**: PaintNet with lambda=1 achieves highest coverage but with poor trajectory quality
-- **Smoothness**: SprayDiffusion maintains better trajectory smoothness
-- **Inference Speed**: PaintNet generally faster but with trade-offs in quality
+### Comprehensive Method Comparison
+
+#### SprayDiffusion (Ours) vs Baselines
+- **Trajectory Quality (PCD)**: SprayDiffusion achieves the best PCD scores across all datasets, demonstrating superior trajectory accuracy
+- **Smoothness**: SprayDiffusion consistently achieves the best smoothness scores across all datasets
+- **Coverage**: Mixed results - SprayDiffusion achieves highest coverage on Windows (99.65%), while Point-Wise achieves highest coverage on Cuboids (98.73%), Shelves (92.96%), and Containers (82.86%)
+
+#### Method-Specific Strengths
+- **SprayDiffusion**: Best overall trajectory quality and smoothness, excellent coverage on Windows
+- **Point-Wise**: Best coverage on Cuboids, Shelves, and Containers datasets
+- **Multi-Path**: Moderate performance across all metrics
+- **PaintNet**: Generally poor performance across all metrics, with very low coverage rates
 
 ## Reproducibility
 

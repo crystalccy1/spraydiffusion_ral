@@ -1,4 +1,4 @@
-# 3DCov-Diffusion: 3D-Aware Diffusion Policy for Coverage Path Planning
+# 3D-CovDiffusion: 3D-Aware Diffusion Policy for Coverage Path Planning
 
 This repository contains the implementation of SprayDiffusion, a diffusion-based approach for robotic spray painting trajectory generation.
 
